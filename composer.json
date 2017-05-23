@@ -1,0 +1,19 @@
+{
+    "name": "linux007/swoole-server",
+    "description": "swoole server library",
+    "type": "library",
+    "authors": [
+        {
+            "name": "linux007",
+            "email": "bzyyc.happy@163.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+	"autoload": {
+		"psr-4": {
+			"cysw\\server\\": "src/server",
+			"cysw\\traits\\": "src/traits"
+		}
+	}
+}
