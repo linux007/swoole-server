@@ -9,7 +9,7 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {}
+    "require": {},
 	"autoload": {
 		"psr-4": {
 			"cysw\\server\\": "src/server",
