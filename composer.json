@@ -12,8 +12,7 @@
     "require": {},
 	"autoload": {
 		"psr-4": {
-			"base\\server\\": "src/server",
-			"base\\traits\\": "src/traits"
+			"base\\": "src"
 		}
 	}
 }

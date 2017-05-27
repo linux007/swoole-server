@@ -24,7 +24,7 @@ class Server {
     protected $config = [];
     /**
      * swoole server 对象
-     * @var swoole\server | swoole\http\server | swoole\websocket\server
+     * @var \swoole\server | \swoole\http\server | \swoole\websocket\server
      */
     public $server = null;
     /**
@@ -32,7 +32,7 @@ class Server {
      * 0 -- 系定义协议server
      * 1 -- http
      * 2 -- websock & http
-     * @var  swoole\server | swoole\http\server | swoole\websocket\server
+     * @var  \swoole\server | \swoole\http\server | \swoole\websocket\server
      */
     protected $serverType = 0;
 
@@ -66,22 +66,66 @@ class Server {
      */
     protected $serverMode;
 
-    public function __construct($ini = null) {
+    /**
+     * 实例
+     * @var
+     */
+    private static $instance = null;
+
+    private function __construct($ini = null) {
+//        $this->config = Config::load($ini);
+//        $this->serverMode = isset($this->config['mode']) ? constant($this->config['mode']) : SWOOLE_PROCESS;
+
+        if ( !\extension_loaded('swoole') ) {
+            throw new \Exception('no swoole extension. get: https://github.com/swoole/swoole-src"');
+        }
+
+        if (version_compare(SWOOLE_VERSION, '1.9.5', '<')) {
+            throw new \Exception('the version of swoole must be >= 1.8.7');
+        }
+
+    }
+
+    public static function getInstance() {
+        if (is_null(self::$instance)) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * 对象属性初始化
+     * @param null $ini
+     */
+    public function set($ini = null) {
         $this->config = Config::load($ini);
         $this->serverMode = isset($this->config['mode']) ? constant($this->config['mode']) : SWOOLE_PROCESS;
-
+        return $this;
     }
 
-    protected function systemCheck() {
-
-    }
-
-
+    /**
+     * 初始化配置
+     * worker_num, buffer, time_zone等
+     */
     protected function init() {
+        $unixsockBufferSize = isset($this->config['php']['unixsock_buffer_size']) ? $this->config['php']['unixsock_buffer_size']  : 1024 * 1000;
+        ini_set('swoole.unixsock_buffer_size', $unixsockBufferSize);
 
+        date_default_timezone_set('PRC');
+
+        // todo
+
+        $swSettings = array_merge($this->config['swoole'], $this->config['server']['settings']);
+        $this->config['swSettings'] = $swSettings;
+        $defaultCpuNum = function_exists('\\swoole_cpu_num') ? \swoole_cpu_num() : 8;
+        $this->config['swSettings']['worker_num'] = isset($swSettings['worker_num']) ? $swSettings['worker_num'] : $defaultCpuNum;
     }
+
 
     protected function createWorkerServer() {
+
+        $this->init();
+
         switch ($this->serverType) {
             case SWOOLE_HTTP_SERVER:
                 $className = '\\Swoole\\Http\\Server';
@@ -96,11 +140,11 @@ class Server {
         }
 
         $_G = $this->config;
-        $swSettings = array_merge($_G['swoole'], $_G['server']['settings']);
+//        $swSettings = array_merge($_G['swoole'], $_G['server']['settings']);
         $socketType = isset($_G['socket']) ? constant($_G['socket']) : SWOOLE_TCP;
 
         $this->server = new $className($_G['host'], $_G['port'], $this->serverMode, $socketType);
-        $this->server->set($swSettings);
+        $this->server->set($_G['swSettings']);
         //端口监听
 
         if (isset($_G['listen']) && count($_G['listen']) > 0) {
@@ -108,28 +152,25 @@ class Server {
                 // init swoole host & port
                 $_host = isset($item['host']) ? $item['host'] : $_G['swoole']['host'];
                 $_port = isset($item['port']) ? $item['port'] : $_G['swoole']['port'];
-                $port_server = $this->server->listen($_host, $_port, constant($item['socket']));
+                $portServer = $this->server->listen($_host, $_port, constant($item['socket']));
                 unset($_host, $_port);
+                $this->bindCallback($portServer);
             }
         }
 
         // 绑定回调
+        $this->bindCallback($this->server);
 
+        $this->worker->beforeStart();
+
+        $this->server->start();
     }
 
+    /**
+     * 绑定回调事件
+     * @param $server  ［绑定回调事件到对象，可以是swoole_server | swoole_listen_port］
+     */
     private function bindCallback($server) {
-//        if ( !($server instanceof swoole\server\port) ) {
-//            $this->server->on('ManagerStart', [$this, 'onManagerStart']);
-//            $server->on('WorkerStart',  [$this, 'onWorkerStart']);
-//            $server->on('WorkerStop',   [$this, 'onWorkerStop']);
-//            $server->on('PipeMessage',  [$this, 'onPipeMessage']);
-//            $server->on('Start',        [$this, 'onStart']);
-//            $server->on('Finish',       [$this, 'onFinish']);
-////            $server->on('Task',         [$this, 'onTask']);
-//            $server->on('Connect',      [$this, 'onConnect']);
-//            $server->on('Close',        [$this, 'onClose']);
-//
-//        }
 
         $callbackHandle = array(
             'onWorkerStop',
@@ -138,33 +179,42 @@ class Server {
             'onConnect',
             'onClose',
 
-//            'onTask',
-//            'onFinish',
             'onManagerStart',
             'onManagerStop',
 
             'onPipeMessage',
         );
 
-        $this->server->on('Start', array($this->worker, 'onStart'));
-        $this->server->on('Shutdown', array($this->worker, 'onShutdown'));
-        $this->server->on('WorkerStart', array($this->worker, 'onWorkerStart'));
+        if ( !($server instanceof \swoole\server\port) ) {
 
-        //可以是websocket | http
-        if ($this->server instanceof swoole\http\server) {
-            $this->server->on('Request', [$this->worker, 'onRequest']);
-        }
+            $this->server->on('Start', array($this->worker, 'onStart'));
+            $this->server->on('Shutdown', array($this->worker, 'onShutdown'));
+            $this->server->on('WorkerStart', array($this->worker, 'doWork'));
 
-        if ($this->server instanceof swoole\websocket\server) {
-            $this->server->on('Message', [$this->worker, 'onMessage']);
-
-            //设置onHandShake回调函数后不会再触发onOpen事件
-            if (isset($this->config['handShake']) && $this->config['handShake']) {
-                $this->server->on('HandShake', [$this->worker, 'onHandShake']);
-            } else {
-                $this->server->on('Open', [$this->worker, 'onOpen']);
+            //可以是websocket | http
+            if ($this->server instanceof \swoole\http\server) {
+                $this->server->on('Request', [$this->worker, 'onRequest']);
             }
+
+            if ($this->server instanceof \swoole\websocket\server) {
+                $this->server->on('Message', [$this->worker, 'onMessage']);
+
+                //设置onHandShake回调函数后不会再触发onOpen事件
+                if (isset($this->config['handShake']) && $this->config['handShake']) {
+                    $this->server->on('HandShake', [$this->worker, 'onHandShake']);
+                } else {
+                    $this->server->on('Open', [$this->worker, 'onOpen']);
+                }
+            }
+
+            foreach($callbackHandle as $handler) {
+                if(method_exists($this->worker, $handler)) {
+                    $this->server->on(\substr($handler, 2), [$this->worker, $handler]);
+                }
+            }
+
         }
+
         // 兼容 swoole\server | swoole\server\port
         if ($server->type == SWOOLE_TCP) {
             $server->on('Receive', [$this->worker, 'onReceive']);
@@ -174,19 +224,6 @@ class Server {
             $server->on('Receive', [$this->worker, 'onReceive']);
             $server->on('Packet', [$this->worker, 'onPacket']);
         }
-
-        foreach($callbackHandle as $handler) {
-            if(method_exists($this->worker, $handler)) {
-                $this->server->on(\substr($handler, 2), array($this->worker, $handler));
-            }
-        }
-
-
-    }
-
-    public function onWorkerStart($server, $workerId) {
-        $this->setProcessName("[worker#$workerId]");
-        //初始化worker 进程对象
 
     }
 
@@ -198,22 +235,6 @@ class Server {
         // 当前进程对象
         $this->worker = $callback;
         $this->worker->setServer($this->server);
-    }
-
-    public function start() {
-
-    }
-
-    protected function setProcessName($name) {
-        if (function_exists('\cli_set_process_title')) {
-            @cli_set_process_title($name);
-        } else {
-            if (function_exists('\swoole_set_process_name')) {
-                @swoole_set_process_name($name);
-            } else {
-                trigger_error(__METHOD__ .' failed. require cli_set_process_title or swoole_set_process_name.');
-            }
-        }
     }
 
 
