@@ -80,23 +80,10 @@ abstract class BaseCallback {
     }
 
     /**
-     * @param \swoole\server $server
-     * @param $frame
-     * @return mixed
-     */
-    abstract function onMessage(\swoole\server $server, $frame);
-    /**
      * 服务启动前预留接口,
      * @return mixed
      */
     abstract function beforeStart();
-    /**
-     * http server onrequest回调
-     * @param \swoole\http\request $request
-     * @param \swoole\http\reponse $reponse
-     * @return mixed
-     */
-    abstract function onRequest(\swoole\http\request $request, \swoole\http\reponse $reponse);
 
     /**
      * worker 进程初始化
