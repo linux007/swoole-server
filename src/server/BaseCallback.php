@@ -7,7 +7,7 @@
  */
 
 namespace base\server;
-use base\component\Log;
+use base\component\log\Log;
 
 
 abstract class BaseCallback {
@@ -27,18 +27,19 @@ abstract class BaseCallback {
 
 
     public function onStart($server) {
-        $class = end(explode('\\', get_class($this)));
+        $class = $this->_realClass(get_class($this));
+
         if ($server instanceof \swoole\http\server) {
 
-            $this->setProcessName($class . ' Http Server:' . '[master:'.$server->master_pid.']');
+            $this->setProcessName($class . ' Http Server:' . $server->port . '[master:'.$server->master_pid.']');
             Log::getInstance()->info(get_class($this) . ' Http Server running master:' . $server->master_pid);
         } elseif ($server instanceof \swoole\websocket\server) {
 
-            $this->setProcessName($class . ' Websocket Server:' . '[master:'.$server->master_pid.']');
+            $this->setProcessName($class . ' Websocket Server:' . $server->port . '[master:'.$server->master_pid.']');
             Log::getInstance()->info(get_class($this) . ' Websocket Server running master:' . $server->master_pid);
         } else {
 
-            $this->setProcessName($class . ' Server:' . '[master:'.$server->master_pid.']');
+            $this->setProcessName($class . ' Server:' . $server->port . '[master:'.$server->master_pid.']');
             Log::getInstance()->info(get_class($this) . ' Server running master:' . $server->master_pid);
         }
 
@@ -49,9 +50,8 @@ abstract class BaseCallback {
     }
 
     public function onManagerStart($server) {
-        $class = end(explode('\\', get_class($this)));
         $this->setProcessName('[manager:' . $server->manager_pid . ']');
-        Log::getInstance()->info(get_class($this) . 'Manager:' . $server->manager_pid);
+        Log::getInstance()->info(get_class($this) . ' Manager:' . $server->manager_pid);
     }
 
     public function onManagerStop() {
@@ -92,5 +92,11 @@ abstract class BaseCallback {
      * @return mixed
      */
     abstract function onWorkerStart(\swoole\server $server, $wokerId);
+
+
+    private function _realClass($class) {
+        if ($pos = strrpos($class, '\\')) return substr($class, $pos + 1);
+        return $pos;
+    }
 
 }

@@ -8,12 +8,13 @@
 
 namespace base\server;
 
-use base\component\Config;
+use base\component\config\Config;
 use base\server\BaseCallback;
 
 define('SWOOLE_HTTP_SERVER', 1);
 define('SWOOLE_WEBSOCKET_SERVER', 2);
 define('SWOOLE_TASK_SERVER', 3);
+define('SWOOLE_SERVER', 0);
 
 class Server {
 
@@ -84,6 +85,9 @@ class Server {
             throw new \Exception('the version of swoole must be >= 1.8.7');
         }
 
+        $this->config = Config::load($ini);
+        $this->serverMode = isset($this->config['mode']) ? constant($this->config['mode']) : SWOOLE_PROCESS;
+
     }
 
     public static function getInstance() {
@@ -97,11 +101,10 @@ class Server {
      * 对象属性初始化
      * @param null $ini
      */
-    public function set($ini = null) {
-        $this->config = Config::load($ini);
-        $this->serverMode = isset($this->config['mode']) ? constant($this->config['mode']) : SWOOLE_PROCESS;
-        return $this;
-    }
+//    public function set($ini = null) {
+//
+//        return $this;
+//    }
 
     /**
      * 初始化配置
@@ -119,10 +122,12 @@ class Server {
         $this->config['swSettings'] = $swSettings;
         $defaultCpuNum = function_exists('\\swoole_cpu_num') ? \swoole_cpu_num() : 8;
         $this->config['swSettings']['worker_num'] = isset($swSettings['worker_num']) ? $swSettings['worker_num'] : $defaultCpuNum;
+
+        $this->serverType = isset($this->config['server']['type']) ? $this->config['server']['type'] : SWOOLE_SERVER;
     }
 
 
-    protected function createWorkerServer() {
+    public function createWorkerServer() {
 
         $this->init();
 
@@ -140,12 +145,18 @@ class Server {
         }
 
         $_G = $this->config;
+        $_server = $_G['server'];
 //        $swSettings = array_merge($_G['swoole'], $_G['server']['settings']);
-        $socketType = isset($_G['socket']) ? constant($_G['socket']) : SWOOLE_TCP;
+        $socketType = isset($_server['socket']) ? constant($_server['socket']) : SWOOLE_TCP;
 
-        $this->server = new $className($_G['host'], $_G['port'], $this->serverMode, $socketType);
+        $this->server = new $className($_server['host'], $_server['port'], $this->serverMode, $socketType);
         $this->server->set($_G['swSettings']);
         //端口监听
+        return $this;
+    }
+
+    public function run() {
+        $_G = $this->config;
 
         if (isset($_G['listen']) && count($_G['listen']) > 0) {
             foreach ($_G['listen'] as $listen_server => $item) {
@@ -216,7 +227,7 @@ class Server {
         }
 
         // 兼容 swoole\server | swoole\server\port
-        if ($server->type == SWOOLE_TCP) {
+        if ($this->serverType == SWOOLE_SERVER) {
             $server->on('Receive', [$this->worker, 'onReceive']);
         }
 
@@ -235,6 +246,7 @@ class Server {
         // 当前进程对象
         $this->worker = $callback;
         $this->worker->setServer($this->server);
+        return $this;
     }
 
 

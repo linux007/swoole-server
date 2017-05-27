@@ -25,7 +25,7 @@ abstract class WorkerHttp extends BaseCallback {
      * @param \swoole\http\reponse $reponse
      * @return mixed
      */
-    abstract function onRequest(\swoole\http\request $request, \swoole\http\reponse $reponse);
+    abstract function onRequest(\swoole\http\request $request, \swoole\http\response $response);
 
     /**
      * worker 进程初始化

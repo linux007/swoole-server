@@ -6,9 +6,9 @@
  * Time: 15:56
  */
 
-namespace base\component;
+namespace base\component\log;
 
-use base\component\Config;
+use base\component\config\Config;
 
 
 class Log {
