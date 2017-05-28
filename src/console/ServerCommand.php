@@ -32,7 +32,7 @@ class ServerCommand  extends BaseServer {
         $className = $serverDefinition['server']['classname'];
         if ($pos = strrpos($className, '\\')) {
             $classFile = substr($className, $pos + 1);
-            include APP_PATH . '/server/' . $classFile . '.php';
+            include APPLICATION_PATH . '/server/' . $classFile . '.php';
         }
 
         if ( !class_exists($className) ) {
