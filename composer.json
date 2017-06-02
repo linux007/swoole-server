@@ -13,7 +13,7 @@
 	"autoload": {
 		"psr-4": {
 			"base\\": "src",
-            "Aura\\SqlQuery\\":"library/Aura/SqlQuery"
+            "Aura\\SqlQuery\\":"src/library/aura/sqlquery"
 		}
 	}
 }
