@@ -62,7 +62,7 @@ class ServerCommand  extends BaseServer {
 
         $pid = file_get_contents($pidfile);
 
-        if ( swoole_process::kill($pid, 0) && posix_kill($pid, 15)) {
+        if ( \swoole_process::kill($pid, 0) && posix_kill($pid, 15)) {
             do {
                 usleep(100000);
             } while(file_exists($pidfile));
