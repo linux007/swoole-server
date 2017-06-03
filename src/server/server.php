@@ -245,7 +245,7 @@ class Server {
 
         // 当前进程对象
         $this->worker = $callback;
-        $this->worker->setServer($this->server);
+        $this->worker->setServer($this->server, $this->config);
         return $this;
     }
 

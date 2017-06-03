@@ -18,11 +18,18 @@ abstract class BaseCallback {
      */
     protected $server;
 
+    /**
+     * 服务初始化配置
+     * @var
+     */
+    protected $config;
+
     public function __construct() {
     }
 
-    public function setServer(\swoole\server $server) {
+    public function setServer(\swoole\server $server, $config) {
         $this->server = $server;
+        $this->config = $config;
     }
 
 
@@ -83,7 +90,9 @@ abstract class BaseCallback {
      * 服务启动前预留接口,
      * @return mixed
      */
-    abstract function beforeStart();
+    public function beforeStart() {
+        print_r($this->config);
+    }
 
     /**
      * worker 进程初始化

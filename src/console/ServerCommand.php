@@ -11,7 +11,6 @@ namespace base\console;
 use base\console\BaseServer;
 use base\server\Server;
 
-use function Composer\Autoload\includeFile;
 use Symfony\Component\Debug\Exception\ClassNotFoundException;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 

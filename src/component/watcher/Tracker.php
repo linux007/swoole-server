@@ -22,10 +22,11 @@ class Tracker {
     public function register(ResourceInterface $resource) {
         $descendants = [];
         if (is_dir($resource->getPath())) {
-            $descendants = $resource->getDescendants();
+            $this->tracked = $resource->getDescendants();
+        } else {
+            $this->tracked[$resource->getKey()] = $resource;
         }
-        $this->tracked[$resource->getKey()] = $resource;
-        $this->tracked = array_merge($this->tracked, $descendants);
+
     }
 
     /**
@@ -34,8 +35,6 @@ class Tracker {
     public function checkTrackings() {
         foreach ($this->tracked as $key => $res) {
             if ($res->detectChanges()) {
-                echo $key . PHP_EOL;
-                echo '======================change================================' . PHP_EOL;
                 return true;
             }
         }
