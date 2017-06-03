@@ -91,7 +91,24 @@ abstract class BaseCallback {
      * @return mixed
      */
     public function beforeStart() {
-        print_r($this->config);
+        if (isset($this->config['server']['autoreload'])  && $this->config['server']['autoreload']) {
+
+            $reloadProcess = new \swoole_process(function($process) {
+                $tracker = new Tracker();
+                $watcher = new Watcher($tracker);
+                $watcher->watch(APPLICATION_PATH);
+                swoole_timer_tick(2000, function () use ($watcher) {
+                    $changed = $watcher->start();
+                    if ($changed) {
+                        $pid = file_get_contents($this->config['swoole']['pid_file']);
+                        if (posix_kill($pid, SIGUSR1)) {
+                            Log::getInstance()->info('reloading server ...');
+                        }
+                    }
+                });
+            });
+            $this->server->addProcess($reloadProcess);
+        }
     }
 
     /**

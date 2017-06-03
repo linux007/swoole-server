@@ -10,15 +10,6 @@ namespace base\server;
 
 use base\server\BaseCallback;
 abstract class WorkerHttp extends BaseCallback {
-
-
-    /**
-     * 服务启动前预留接口,
-     * @return mixed
-     */
-    public function beforeStart() {
-
-    }
     /**
      * http server onrequest回调
      * @param \swoole\http\request $request

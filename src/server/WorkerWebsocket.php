@@ -12,11 +12,6 @@ use base\server\BaseCallback;
 
 abstract class WorkerWebsocket extends BaseCallback {
 
-    public function beforeStart() {
-        // TODO: Implement beforeStart() method.
-    }
-
-
     public function onWorkerStart(\swoole\server $server, $wokerId) {
         // TODO: Implement onWorkerStart() method.
     }
