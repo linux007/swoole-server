@@ -74,9 +74,6 @@ class Server {
     private static $instance = null;
 
     private function __construct($ini = null) {
-//        $this->config = Config::load($ini);
-//        $this->serverMode = isset($this->config['mode']) ? constant($this->config['mode']) : SWOOLE_PROCESS;
-
         if ( !\extension_loaded('swoole') ) {
             throw new \Exception('no swoole extension. get: https://github.com/swoole/swoole-src"');
         }
@@ -90,9 +87,9 @@ class Server {
 
     }
 
-    public static function getInstance() {
+    public static function getInstance($ini) {
         if (is_null(self::$instance)) {
-            self::$instance = new self();
+            self::$instance = new self($ini);
         }
         return self::$instance;
     }

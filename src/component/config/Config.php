@@ -28,7 +28,24 @@ class Config {
             $config = parse_ini_file($ini, true);
         }
 
-        return array_merge($defaultConfig, $config);
+        return self::array_merge_recursive_distinct($defaultConfig, $config);
+    }
+
+    public static function array_merge_recursive_distinct(array &$array1, array &$array2)
+    {
+        $merged = $array1;
+        foreach ($array2 as $key => &$value)
+        {
+            if (is_array($value) && isset($merged[$key]) && is_array($merged[$key]))
+            {
+                $merged[$key] = self::array_merge_recursive_distinct($merged[$key], $value);
+            }
+            else
+            {
+                $merged[$key] = $value;
+            }
+        }
+        return $merged;
     }
 
     public static function parse_ini_file_multi($file, $process_sections = false, $scanner_mode = INI_SCANNER_NORMAL) {

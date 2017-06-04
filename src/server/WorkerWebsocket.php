@@ -11,7 +11,11 @@ namespace base\server;
 use base\server\BaseCallback;
 
 abstract class WorkerWebsocket extends BaseCallback {
-
+    /**
+     * workerStart 回调
+     * @param \swoole\server $server
+     * @param $wokerId
+     */
     public function onWorkerStart(\swoole\server $server, $wokerId) {
         // TODO: Implement onWorkerStart() method.
     }

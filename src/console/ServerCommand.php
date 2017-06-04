@@ -11,13 +11,15 @@ namespace base\console;
 use base\console\BaseServer;
 use base\server\Server;
 
+use Symfony\Component\Console\Input\Input;
 use Symfony\Component\Debug\Exception\ClassNotFoundException;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 
 
 class ServerCommand  extends BaseServer {
 
-    public function handleStart() {
+    public function handleStart(Input $input) {
+
         $serverDefinition = $this->getServerDefinition();
         $pidfile = $this->getPidFile();
 
@@ -41,7 +43,7 @@ class ServerCommand  extends BaseServer {
 
         $worker = new $className();
 
-        $server = Server::getInstance()->createWorkerServer()->setCallback($worker);
+        $server = Server::getInstance($this->getAppIni())->createWorkerServer()->setCallback($worker);
 
         $server->run();
 
