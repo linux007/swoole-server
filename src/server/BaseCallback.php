@@ -51,6 +51,12 @@ abstract class BaseCallback {
             Log::getInstance()->info(get_class($this) . ' Server running master:' . $server->master_pid);
         }
 
+        if (\swoole_process::kill($server->master_pid, 0)) {
+            Log::getInstance()->info("Starting server: [\e[0;32m OK \e[0m]");
+            return 0;
+        }
+
+        return 1;
     }
 
     public function onShutDown() {
@@ -103,7 +109,7 @@ abstract class BaseCallback {
                     if ($changed) {
                         $pid = file_get_contents($this->config['swoole']['pid_file']);
                         if (posix_kill($pid, SIGUSR1)) {
-                            Log::getInstance()->info('reloading server ...');
+                            Log::getInstance()->info("Reloading server: [ \033[0;32m OK \033[0m ]");
                         }
                     }
                 });

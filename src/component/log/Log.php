@@ -90,7 +90,7 @@ class Log {
             error_log('[' . date('Y-m-d H:i:s') . '] [error] - ' . $str, 3, $this->logFile);
             return true;
         }
-        echo '[' . date('Y-m-d H:i:s') . '] ' . self::$color('[error] - ', $background_color) . $str;
+        echo '[' . date('Y-m-d H:i:s') . '] [' . self::$color('error', $background_color) .'- ]'. $str;
     }
 
     public function debug($str = '', $newline = true, $background_color = null) {
@@ -100,7 +100,7 @@ class Log {
             error_log('[' . date('Y-m-d H:i:s') . '] [debug] - ' . $str, 3, $this->logFile);
             return true;
         }
-        echo '[' . date('Y-m-d H:i:s') . '] '. self::$color('[debug] - ', $background_color) . $str;
+        echo '[' . date('Y-m-d H:i:s') . '] ['. self::$color('debug', $background_color) . '] -'. $str;
     }
 
     public static function __callStatic($foreground_color, $args) {

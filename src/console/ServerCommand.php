@@ -46,11 +46,6 @@ class ServerCommand  extends BaseServer {
         $server = Server::getInstance($this->getAppIni())->createWorkerServer()->setCallback($worker);
 
         $server->run();
-
-        $pid = file_get_contents($pidfile);
-        if (swoole_process::kill($pid, 0)) return 0;
-
-        return 1;
     }
 
 
@@ -67,6 +62,7 @@ class ServerCommand  extends BaseServer {
             do {
                 usleep(100000);
             } while(file_exists($pidfile));
+            Log::getInstance()->info("Stopping server: [\e[0;32m OK \e[0m]");
             return 0;
         }
 
@@ -84,6 +80,7 @@ class ServerCommand  extends BaseServer {
         $pid = file_get_contents($pidfile);
 
         if (file_exists($pidfile) && posix_kill($pid, SIGUSR1)) {
+            Log::getInstance()->info("Reloading server: [\e[0;32m OK \e[0m]");
             return 0;
         }
         return 1;

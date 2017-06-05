@@ -39,8 +39,11 @@ class DirectoryResource extends FileResource implements ResourceInterface {
                 $resource = new DirectoryResource($splFile);
                 $descendants[$resource->getKey()] = $resource;
             } else {
-                $resource = new FileResource($splFile);
-                $descendants[$resource->getKey()] = $resource;
+                $ext = $splFile->getExtension();
+                if (in_array($ext, ['php', 'ini'])) {
+                    $resource = new FileResource($splFile);
+                    $descendants[$resource->getKey()] = $resource;
+                }
             }
         }
 
